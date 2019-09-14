@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+require 'colorize' # https://github.com/fazibear/colorize
+
+# Class Parser
+class Parser
+  attr_reader :dummy
+
+  def initialize
+    parser = OptionParser.new
+    parser.on('-d', '--dummy', 'halp') do
+      @dummy = true
+    end
+    parser.parse!
+  end
+end
+
+# Class Git
+class Git
+  attr_reader :name
+  attr_reader :path
+
+  def initialize(name, path)
+    @name = name
+    @path = path
+    @args = "-C #{@path}"
+  end
+
+  def dirty?
+    dirty = `git #{@args} status -s`
+    if dirty.empty?
+      false
+    else
+      true
+    end
+  end
+
+  def status
+    status = `git #{@args} status -s`
+    status
+  end
+end
+
+# Class GitD
+class GitD < Git
+  def initialize(name, git_dir, work_tree)
+    super(name, git_dir)
+    @git_dir = git_dir
+    @work_tree = work_tree
+    @args = "--git-dir=#{@git_dir} --work-tree=#{@work_tree}"
+  end
+end
+
+repos = [
+  Git.new('ansible', File.join(Dir.home, 'ansible')),
+  Git.new('scripts', File.join(Dir.home, 'bin')),
+  GitD.new('dotfiles', File.join(Dir.home, '.dotfiles'), Dir.home),
+  GitD.new('keys', File.join(Dir.home, '.keys'), Dir.home)
+]
+repos.each do |repo|
+  # next unless repo.dirty?
+
+  puts <<~ENDOFSTR
+    #{'==>'.blue.bold} #{repo.name.bold} #{repo.path.underline}
+    #{repo.status}
+  ENDOFSTR
+end
