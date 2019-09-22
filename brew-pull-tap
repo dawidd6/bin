@@ -1,0 +1,44 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# define tap
+TAP="$USER/homebrew-tap"
+
+# ensure we are in correct repository
+echo "==> Change to $TAP"
+cd "$(brew --repository $TAP)"
+
+# ensure we are on master
+echo "==> Checkout master"
+git checkout master
+
+# pull stuff and commit
+echo "==> Brew pull #$1"
+brew pull \
+    --bottle \
+    --bintray-org=$USER \
+    --test-bot-user=$USER \
+    "https://github.com/$TAP/pull/$1"
+
+# push changes to master
+echo "==> Push to origin master"
+git push -u origin master
+
+# wait for github to process stuff
+echo "==> Waiting 10s"
+sleep 10s
+
+# set branches names
+MERGE_BRANCH="$(hub pr list --state closed --format "%i %H%n" | grep "#$1" | cut -d' ' -f2)"
+PR_BRANCH="pr-$1"
+
+# delete remote branches
+echo "==> Delete \"$MERGE_BRANCH\" branch on remote"
+git push origin --delete "$MERGE_BRANCH"
+echo "==> Delete \"$PR_BRANCH\" branch on remote"
+git push origin --delete "$PR_BRANCH"
+
+# delete local branch
+echo "==> Delete \"$MERGE_BRANCH\" branch locally"
+git branch -D "$MERGE_BRANCH"
