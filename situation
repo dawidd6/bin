@@ -24,10 +24,11 @@ class Git
   attr_reader :name
   attr_reader :path
 
-  def initialize(name, path)
+  def initialize(name, work_tree, git_dir = nil)
     @name = name
-    @path = path
-    @args = "-C #{@path}"
+    @path = git_dir || work_tree
+    git_dir = "#{work_tree}/.git" if git_dir.nil?
+    @args = "--git-dir=#{git_dir} --work-tree=#{work_tree}"
   end
 
   def dirty?
@@ -43,23 +44,18 @@ class Git
     status = `git #{@args} status -s`
     status
   end
-end
 
-# Class GitD
-class GitD < Git
-  def initialize(name, git_dir, work_tree)
-    super(name, git_dir)
-    @git_dir = git_dir
-    @work_tree = work_tree
-    @args = "--git-dir=#{@git_dir} --work-tree=#{@work_tree}"
+  def ahead
+    ahead = `git #{@args} log --oneline origin/master..master`
+    ahead
   end
 end
 
 repos = [
   Git.new('ansible', File.join(Dir.home, 'ansible')),
   Git.new('scripts', File.join(Dir.home, 'bin')),
-  GitD.new('dotfiles', File.join(Dir.home, '.dotfiles'), Dir.home),
-  GitD.new('keys', File.join(Dir.home, '.keys'), Dir.home)
+  Git.new('dotfiles', Dir.home, File.join(Dir.home, '.dotfiles')),
+  Git.new('keys', Dir.home, File.join(Dir.home, '.keys')),
 ]
 repos.each do |repo|
   # next unless repo.dirty?
