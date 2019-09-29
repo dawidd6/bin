@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# TODO check if git is ahead of remote or behind
+
 require 'optparse'
 require 'colorize' # https://github.com/fazibear/colorize
 
