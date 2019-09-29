@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -euo pipefail
+
+cd "$(brew --repository homebrew/core)"
+
+for formula in $(brew find-formulae-to-bottle); do
+  brew build-bottle-pr --remote=$USER $formula
+done
