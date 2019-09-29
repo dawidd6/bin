@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+
+dir = `brew --repository homebrew/core`
+user = ENV["USER"]
+remotes = {
+  "#{user}"  =>  "git@github.com:#{user}/linuxbrew-core.git",
+  "origin"   => "git@github.com:Homebrew/linuxbrew-core.git",
+  "homebrew" => "https://github.com/Homebrew/homebrew-core.git",
+}
+
+Dir.chdir(dir.chomp) do
+  if File.exist?(".git/shallow")
+    puts "==> git fetch --unshallow"
+    system("git", "fetch", "--unshallow")
+  end
+
+  remotes.each do |name, url|
+    name_exist = false
+    url_exist = false
+
+    `git remote`.each_line do |line|
+      name_exist = true if line.chomp == name
+    end
+
+    if name_exist && `git remote get-url #{name}`.chomp == url
+      url_exist = true
+    end
+
+    next if name_exist && url_exist
+
+    operation = "set-url" if name_exist && !url_exist
+    operation = "add" unless name_exist
+
+    puts "==> git remote #{operation} #{name} #{url}"
+    system("git", "remote", operation, name, url)
+  end
+end
