@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -euo pipefail
+
+HOMEBREW_BOTTLE_DOMAIN=https://linuxbrew.bintray.com \
+    brew pull \
+        --bottle \
+        --bintray-org=linuxbrew \
+        --test-bot-user=LinuxbrewTestBot \
+        "$1"
