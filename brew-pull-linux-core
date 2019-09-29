@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+cd "$(brew --repository homebrew/core)"
+
 HOMEBREW_BOTTLE_DOMAIN=https://linuxbrew.bintray.com \
     brew pull \
         --bottle \
