@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 dir = `brew --repository homebrew/core`
-user = ENV["USER"]
+user = ENV["HOMEBREW_GITHUB_USER"] || ENV["USER"]
 remotes = {
   "#{user}"  =>  "git@github.com:#{user}/linuxbrew-core.git",
   "origin"   => "git@github.com:Homebrew/linuxbrew-core.git",
