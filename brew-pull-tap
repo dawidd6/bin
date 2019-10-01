@@ -2,25 +2,14 @@
 
 set -euo pipefail
 
-# define tap
 TAP="$USER/homebrew-tap"
 
-# ensure we are in correct repository
-echo "==> Change to $TAP"
 cd "$(brew --repository $TAP)"
 
-# ensure we are on master
-echo "==> Checkout master"
 git checkout master
 
-# pull stuff and commit
-echo "==> Brew pull #$1"
 brew pull \
     --bottle \
     --bintray-org=$USER \
     --test-bot-user=$USER \
     "https://github.com/$TAP/pull/$1"
-
-# push changes to master
-echo "==> Push to origin master"
-git push -u origin master
