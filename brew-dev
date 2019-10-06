@@ -77,23 +77,34 @@ parser.on("--merge [SHA]", "merge upstream homebrew-core to linuxbrew-core") do 
   end
 end
 parser.on("--bottle [FORMULAE]", "if no arguments given, find formulae to bottle") do |formulae|
+  # Split argument safely
+  formulae = formulae&.split(",")
   # If no argument given, find formulae to bottle
   if formulae.nil?
     formulae = []
     `brew find-formulae-to-bottle`.each_line do |line|
       formulae << line.chomp
     end
-    formulae = formulae.join(",")
   end
+  # Print
+  formulae.each do |formula|
+    puts "==> #{formula}"
+  end
+  # Exit if no arguments
+  exit if formulae.empty?
+  # Wait
+  print "==> Proceed?"
+  readline
   # Ensure we are on master
   system("git", "checkout", "master", :out => File::NULL)
   # Create PRs
-  formulae.split(",").each do |formula|
-    puts "==> #{formula}"
+  formulae.each do |formula|
     system("brew", "build-bottle-pr", "--remote=#{user}", formula)
   end
 end
 parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numbers (squashed if needed), if no arguments, then pull those whose PRs are labeled 'good' and 'bottle'") do |pr_numbers|
+  # Split argument safely
+  pr_numbers = pr_numbers&.split(",")
   # If no argument given, get PRs which are labeled 'bottle' and 'good'
   if pr_numbers.nil?
     pr_numbers = []
@@ -107,23 +118,38 @@ parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numb
       end
       pr_numbers << pull["number"] if bottle && good
     end
-    pr_numbers = pr_numbers.join(",")
   end
+  # Print
+  pr_numbers.each do |pr_number|
+    puts "==> ##{pr_number}"
+  end
+  # Exit if no arguments
+  exit if pr_numbers.empty?
+  # Wait
+  print "==> Proceed?"
+  readline
   # Ensure we are on master
   system("git", "checkout", "master", :out => File::NULL)
   # Pull bottles
-  pr_numbers.split(",").each do |pr_number|
-    puts "==> ##{pr_number}"
+  pr_numbers.each do |pr_number|
     system("brew", "pull", "--bottle", "--bintray-org=linuxbrew", "--test-bot-user=LinuxbrewTestBot", pr_number)
     system("brew", "squash-bottle-pr")
   end
 end
 parser.on("--pull-tap PR_NUMBERS", "pull bottles for given comma separated PR numbers (user tap)") do |pr_numbers|
+  # Split argument safely
+  pr_numbers = pr_numbers&.split(",")
+  # Print
+  pr_numbers.each do |pr_number|
+    puts "==> ##{pr_number}"
+  end
+  # Wait
+  print "==> Proceed?"
+  readline
   # Ensure we are on master
   system("git", "checkout", "master", :out => File::NULL)
   # Pull bottles
-  pr_numbers.split(",").each do |pr_number|
-    puts "==> #{pr_number}"
+  pr_numbers.each do |pr_number|
     system("brew", "pull", "--bottle", "--bintray-org=#{user}", "--test-bot-user=#{user}", "https://github.com/#{user}/homebrew-tap/pull/#{pr_number}")
   end
 end
