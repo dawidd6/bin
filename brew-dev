@@ -19,6 +19,16 @@ parser.on("--setup", "setup homebrew-core repo for development") do
     "origin"   => "git@github.com:Homebrew/linuxbrew-core.git",
     "homebrew" => "https://github.com/Homebrew/homebrew-core.git",
   }
+  taps = %w[
+    homebrew/linux-dev
+    homebrew/livecheck
+    dawidd6/autoremove
+  ]
+
+  # Tap
+  taps.each do |tap|
+    system("brew", "tap", tap)
+  end
 
   # Ensure we are in proper repo
   Dir.chdir(dir.chomp)
