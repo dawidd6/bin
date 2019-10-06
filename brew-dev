@@ -1,0 +1,120 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require "json"
+
+# Print help if no arguments given
+ARGV << "-h" if ARGV.empty?
+
+# Get user
+user = ENV["HOMEBREW_GITHUB_USER"] || ENV["USER"]
+
+# Parse options
+parser = OptionParser.new
+parser.on("--setup", "setup homebrew-core repo for development") do
+  dir = `brew --repository homebrew/core`
+  remotes = {
+    "#{user}"  =>  "git@github.com:#{user}/linuxbrew-core.git",
+    "origin"   => "git@github.com:Homebrew/linuxbrew-core.git",
+    "homebrew" => "https://github.com/Homebrew/homebrew-core.git",
+  }
+
+  # Ensure we are in proper repo
+  Dir.chdir(dir.chomp)
+
+  # Unshallow repo if not done already
+  if File.exist?(".git/shallow")
+    puts "==> git fetch --unshallow"
+    system("git", "fetch", "--unshallow")
+  end
+
+  # Add remotes or set-urls
+  remotes.each do |name, url|
+    name_exist = false
+    url_exist = false
+
+    `git remote`.each_line do |line|
+      name_exist = true if line.chomp == name
+    end
+
+    if name_exist && `git remote get-url #{name}`.chomp == url
+      url_exist = true
+    end
+
+    next if name_exist && url_exist
+
+    operation = "set-url" if name_exist && !url_exist
+    operation = "add" unless name_exist
+
+    puts "==> git remote #{operation} #{name} #{url}"
+    system("git", "remote", operation, name, url)
+  end
+end
+parser.on("--fetch", "fetch latest master of homebrew-core") do
+  system("git", "fetch", "homebrew")
+end
+parser.on("--compare", "compare fetched upstream homebrew-core master with linuxbrew-core master") do
+  system("git", "log", "--oneline", "master..homebrew/master")
+end
+parser.on("--merge [SHA]", "merge upstream homebrew-core to linuxbrew-core") do |sha|
+  # Ensure we are on master
+  system("git", "checkout", "master", :out => File::NULL)
+  if sha.nil?
+    system("brew", "merge-homebrew", "--core", "--skip-style")
+  else
+    system("brew", "merge-homebrew", "--core", "--skip-style", sha)
+  end
+end
+parser.on("--bottle [FORMULAE]", "if no arguments given, find formulae to bottle") do |formulae|
+  # If no argument given, find formulae to bottle
+  if formulae.nil?
+    formulae = []
+    `brew find-formulae-to-bottle`.each_line do |line|
+      formulae << line.chomp
+    end
+    formulae = formulae.join(",")
+  end
+  # Ensure we are on master
+  system("git", "checkout", "master", :out => File::NULL)
+  # Create PRs
+  formulae.split(",").each do |formula|
+    puts "==> #{formula}"
+    system("brew", "build-bottle-pr", "--remote=#{user}", formula)
+  end
+end
+parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numbers (squashed if needed), if no arguments, then pull those whose PRs are labeled 'good' and 'bottle'") do |pr_numbers|
+  # If no argument given, get PRs which are labeled 'bottle' and 'good'
+  if pr_numbers.nil?
+    pr_numbers = []
+    pulls = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/pulls`)
+    pulls.each do |pull|
+      bottle = false
+      good = false
+      pull["labels"].each do |label|
+        bottle = true if label["name"] == "bottle"
+        good = true if label["name"] == "good"
+      end
+      pr_numbers << pull["number"] if bottle && good
+    end
+    pr_numbers = pr_numbers.join(",")
+  end
+  # Ensure we are on master
+  system("git", "checkout", "master", :out => File::NULL)
+  # Pull bottles
+  pr_numbers.split(",").each do |pr_number|
+    puts "==> ##{pr_number}"
+    system("brew", "pull", "--bottle", "--bintray-org=linuxbrew", "--test-bot-user=LinuxbrewTestBot", pr_number)
+    system("brew", "squash-bottle-pr")
+  end
+end
+parser.on("--pull-tap PR_NUMBERS", "pull bottles for given comma separated PR numbers (user tap)") do |pr_numbers|
+  # Ensure we are on master
+  system("git", "checkout", "master", :out => File::NULL)
+  # Pull bottles
+  pr_numbers.split(",").each do |pr_number|
+    puts "==> #{pr_number}"
+    system("brew", "pull", "--bottle", "--bintray-org=#{user}", "--test-bot-user=#{user}", "https://github.com/#{user}/homebrew-tap/pull/#{pr_number}")
+  end
+end
+parser.parse!

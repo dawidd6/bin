@@ -1,5 +1,0 @@
-#!/bin/bash
-
-set -euo pipefail
-
-brew build-bottle-pr --remote=$USER --browse $@
