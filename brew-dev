@@ -64,7 +64,9 @@ end
 parser.on("--sync", "pull origin master and push to #{user} master") do
   # Ensure we are on master
   system("git", "checkout", "master", :out => File::NULL)
+  # Pull origin
   system("git", "pull", "origin", "master")
+  # Push user
   system("git", "push", user, "master")
 end
 parser.on("--fetch", "fetch latest master of homebrew-core") do
@@ -108,6 +110,11 @@ parser.on("--bottle [FORMULAE]", "if no arguments given, find formulae to bottle
     system("brew", "build-bottle-pr", "--force", "--remote=#{user}", formula)
   end
 end
+parser.on("--container", "launch bash shell in Docker container with brew in it") do
+  dir = `brew --repository homebrew/core`.chomp
+  image = "homebrew/brew:latest"
+  system("docker", "run", "-it", "--rm", "-v", "#{dir}:#{dir}:ro", "-e", "HOMEBREW_DEVELOPER=1", "-e", "HOMEBREW_NO_AUTO_UPDATE=1", image)
+end
 parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numbers (squashed if needed), if no arguments, then pull those whose PRs are labeled 'good' and 'bottle'") do |pr_numbers|
   # Split argument safely or set to empty array if nil
   pr_numbers = pr_numbers&.split(",") || []
@@ -142,7 +149,7 @@ parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numb
   readline
   # Ensure we are on master
   system("git", "checkout", "master", :out => File::NULL)
-  # Pull bottles
+  # Pull bottles and squash if necessary
   pr_numbers_and_titles.each do |pr_number, _|
     system("brew", "pull", "--bottle", "--bintray-org=linuxbrew", "--test-bot-user=LinuxbrewTestBot", pr_number.to_s)
     system("brew", "squash-bottle-pr")
