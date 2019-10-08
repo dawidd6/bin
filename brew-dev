@@ -61,6 +61,12 @@ parser.on("--setup", "setup homebrew-core repo for development") do
     system("git", "remote", operation, name, url)
   end
 end
+parser.on("--sync", "pull origin master and push to #{user} master") do
+  # Ensure we are on master
+  system("git", "checkout", "master", :out => File::NULL)
+  system("git", "pull", "origin", "master")
+  system("git", "push", user, "master")
+end
 parser.on("--fetch", "fetch latest master of homebrew-core") do
   system("git", "fetch", "homebrew")
 end
@@ -88,7 +94,7 @@ parser.on("--bottle [FORMULAE]", "if no arguments given, find formulae to bottle
   end
   # Print
   formulae.each do |formula|
-    puts "==> #{formula}"
+    puts formula
   end
   # Exit if no arguments
   exit if formulae.empty?
@@ -99,15 +105,16 @@ parser.on("--bottle [FORMULAE]", "if no arguments given, find formulae to bottle
   system("git", "checkout", "master", :out => File::NULL)
   # Create PRs
   formulae.each do |formula|
-    system("brew", "build-bottle-pr", "--remote=#{user}", formula)
+    system("brew", "build-bottle-pr", "--force", "--remote=#{user}", formula)
   end
 end
 parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numbers (squashed if needed), if no arguments, then pull those whose PRs are labeled 'good' and 'bottle'") do |pr_numbers|
-  # Split argument safely
-  pr_numbers = pr_numbers&.split(",")
+  # Split argument safely or set to empty array if nil
+  pr_numbers = pr_numbers&.split(",") || []
+  # Define hash
+  pr_numbers_and_titles = {}
   # If no argument given, get PRs which are labeled 'bottle' and 'good'
-  if pr_numbers.nil?
-    pr_numbers = []
+  if pr_numbers.empty?
     pulls = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/pulls`)
     pulls.each do |pull|
       bottle = false
@@ -116,41 +123,29 @@ parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numb
         bottle = true if label["name"] == "bottle"
         good = true if label["name"] == "good"
       end
-      pr_numbers << pull["number"] if bottle && good
+      pr_numbers_and_titles[pull["number"]] = pull["title"] if bottle && good
+    end
+  else
+    pr_numbers.each do |pr_number|
+      pull = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/pulls/#{pr_number}`)
+      pr_numbers_and_titles[pull["number"]] = pull["title"]
     end
   end
   # Print
-  pr_numbers.each do |pr_number|
-    puts "==> ##{pr_number}"
+  pr_numbers_and_titles.each do |pr_number, pr_title|
+    puts "##{pr_number} \"#{pr_title}\""
   end
   # Exit if no arguments
-  exit if pr_numbers.empty?
+  exit if pr_numbers_and_titles.empty?
   # Wait
   print "==> Proceed?"
   readline
   # Ensure we are on master
   system("git", "checkout", "master", :out => File::NULL)
   # Pull bottles
-  pr_numbers.each do |pr_number|
-    system("brew", "pull", "--bottle", "--bintray-org=linuxbrew", "--test-bot-user=LinuxbrewTestBot", pr_number)
+  pr_numbers_and_titles.each do |pr_number, _|
+    system("brew", "pull", "--bottle", "--bintray-org=linuxbrew", "--test-bot-user=LinuxbrewTestBot", pr_number.to_s)
     system("brew", "squash-bottle-pr")
-  end
-end
-parser.on("--pull-tap PR_NUMBERS", "pull bottles for given comma separated PR numbers (user tap)") do |pr_numbers|
-  # Split argument safely
-  pr_numbers = pr_numbers&.split(",")
-  # Print
-  pr_numbers.each do |pr_number|
-    puts "==> ##{pr_number}"
-  end
-  # Wait
-  print "==> Proceed?"
-  readline
-  # Ensure we are on master
-  system("git", "checkout", "master", :out => File::NULL)
-  # Pull bottles
-  pr_numbers.each do |pr_number|
-    system("brew", "pull", "--bottle", "--bintray-org=#{user}", "--test-bot-user=#{user}", "https://github.com/#{user}/homebrew-tap/pull/#{pr_number}")
   end
 end
 parser.parse!
