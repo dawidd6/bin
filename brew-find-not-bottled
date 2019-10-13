@@ -19,7 +19,7 @@ parser.on("-n", "--must-not-find PATTERN", "must not find this pattern in file")
 end
 parser.parse!
 
-files = []
+formulae = []
 Dir['Formula/*'].each do |file|
   content = File.read(file)
 
@@ -37,7 +37,7 @@ Dir['Formula/*'].each do |file|
 
   next if found > 0
 
-  files << file
+  formulae << file.delete_prefix("Formula/").delete_suffix(".rb")
 end
-files.sort!
-files.map { |file| puts file }
+formulae.sort!
+formulae.map { |formula| puts formula }
