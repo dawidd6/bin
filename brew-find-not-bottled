@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+must_find = [
+
+]
+must_not_find = [
+  /bottle :unneeded/,
+  /:x86_64_linux/,
+]
+
+parser = OptionParser.new
+parser.on("-m", "--must-find PATTERN", "must find this pattern in file") do |pattern|
+  must_find << Regexp.new(pattern)
+end
+parser.on("-n", "--must-not-find PATTERN", "must not find this pattern in file") do |pattern|
+  must_not_find << Regexp.new(pattern)
+end
+parser.parse!
+
+files = []
+Dir['Formula/*'].each do |file|
+  content = File.read(file)
+
+  found = 0
+  must_not_find.each do |pattern|
+    found += 1 if content.match?(pattern)
+  end
+
+  next if found > 0
+
+  found = must_find.length
+  must_find.each do |pattern|
+    found -= 1 if content.match?(pattern)
+  end
+
+  next if found > 0
+
+  files << file
+end
+files.sort!
+files.map { |file| puts file }
