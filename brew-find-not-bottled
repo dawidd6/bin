@@ -2,6 +2,8 @@
 
 require 'optparse'
 
+formulae = []
+formulae_upcoming = []
 must_find = [
 
 ]
@@ -11,6 +13,14 @@ must_not_find = [
 ]
 
 parser = OptionParser.new
+parser.on("-o", "--online", "check core tap PRs") do
+  suffix = ": Build a bottle for Linuxbrew"
+
+  `hub pr list --format '%t%n'`.each_line do |line|
+    line = line.chomp
+    formulae_upcoming << line.delete_suffix(suffix) if line =~ /.*#{suffix}/
+  end
+end
 parser.on("-m", "--must-find PATTERN", "must find this pattern in file") do |pattern|
   must_find << Regexp.new(pattern)
 end
@@ -19,7 +29,6 @@ parser.on("-n", "--must-not-find PATTERN", "must not find this pattern in file")
 end
 parser.parse!
 
-formulae = []
 Dir['Formula/*'].each do |file|
   content = File.read(file)
 
@@ -39,5 +48,7 @@ Dir['Formula/*'].each do |file|
 
   formulae << file.delete_prefix("Formula/").delete_suffix(".rb")
 end
-formulae.sort!
+
+formulae = formulae - formulae_upcoming
+formulae = formulae.sort
 formulae.map { |formula| puts formula }
