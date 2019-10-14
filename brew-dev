@@ -10,8 +10,22 @@ ARGV << "-h" if ARGV.empty?
 # Get user
 user = ENV["HOMEBREW_GITHUB_USER"] || ENV["USER"]
 
+# Define safe system method, will exit with code 1 if command wasn't successful
+def safe_system(*cmd)
+  exit 1 unless system(*cmd)
+end
+
 # Parse options
 parser = OptionParser.new
+parser.on("--rebuild FORMULA", "checkout to 'bottle-' branch and rebase") do |formula|
+  safe_system("git", "checkout", "bottle-#{formula}")
+  safe_system("git", "rebase", "master")
+end
+parser.on("--fix FORMULA", "checkout to 'bottle-' branch, delete top comment and edit formula") do |formula|
+  safe_system("git", "checkout", "bottle-#{formula}")
+  safe_system("sed", "-i", "/# .*: Build a bottle for .*brew/d", "Formula/#{formula}.rb")
+  safe_system("brew", "edit", formula)
+end
 parser.on("--setup", "setup homebrew-core repo for development") do
   dir = `brew --repository homebrew/core`
   remotes = {
@@ -27,7 +41,7 @@ parser.on("--setup", "setup homebrew-core repo for development") do
 
   # Tap
   taps.each do |tap|
-    system("brew", "tap", tap)
+    safe_system("brew", "tap", tap)
   end
 
   # Ensure we are in proper repo
@@ -36,7 +50,7 @@ parser.on("--setup", "setup homebrew-core repo for development") do
   # Unshallow repo if not done already
   if File.exist?(".git/shallow")
     puts "==> git fetch --unshallow"
-    system("git", "fetch", "--unshallow")
+    safe_system("git", "fetch", "--unshallow")
   end
 
   # Add remotes or set-urls
@@ -58,30 +72,30 @@ parser.on("--setup", "setup homebrew-core repo for development") do
     operation = "add" unless name_exist
 
     puts "==> git remote #{operation} #{name} #{url}"
-    system("git", "remote", operation, name, url)
+    safe_system("git", "remote", operation, name, url)
   end
 end
 parser.on("--sync", "pull origin master and push to #{user} master") do
   # Ensure we are on master
-  system("git", "checkout", "master", :out => File::NULL)
+  safe_system("git", "checkout", "master", :out => File::NULL)
   # Pull origin
-  system("git", "pull", "origin", "master")
+  safe_system("git", "pull", "origin", "master")
   # Push user
-  system("git", "push", user, "master")
+  safe_system("git", "push", user, "master")
 end
 parser.on("--fetch", "fetch latest master of homebrew-core") do
-  system("git", "fetch", "homebrew")
+  safe_system("git", "fetch", "homebrew")
 end
 parser.on("--compare", "compare fetched upstream homebrew-core master with linuxbrew-core master") do
-  system("git", "log", "--oneline", "master..homebrew/master")
+  safe_system("git", "log", "--oneline", "master..homebrew/master")
 end
 parser.on("--merge [SHA]", "merge upstream homebrew-core to linuxbrew-core") do |sha|
   # Ensure we are on master
-  system("git", "checkout", "master", :out => File::NULL)
+  safe_system("git", "checkout", "master", :out => File::NULL)
   if sha.nil?
-    system("brew", "merge-homebrew", "--core", "--skip-style")
+    safe_system("brew", "merge-homebrew", "--core", "--skip-style")
   else
-    system("brew", "merge-homebrew", "--core", "--skip-style", sha)
+    safe_system("brew", "merge-homebrew", "--core", "--skip-style", sha)
   end
 end
 parser.on("--bottle [FORMULAE]", "if no arguments given, find formulae to bottle") do |formulae|
@@ -104,16 +118,16 @@ parser.on("--bottle [FORMULAE]", "if no arguments given, find formulae to bottle
   print "==> Proceed?"
   readline
   # Ensure we are on master
-  system("git", "checkout", "master", :out => File::NULL)
+  safe_system("git", "checkout", "master", :out => File::NULL)
   # Create PRs
   formulae.each do |formula|
-    system("brew", "build-bottle-pr", "--force", "--remote=#{user}", formula)
+    safe_system("brew", "build-bottle-pr", "--force", "--remote=#{user}", formula)
   end
 end
 parser.on("--container", "launch bash shell in Docker container with brew in it") do
   dir = `brew --repository homebrew/core`.chomp
   image = "homebrew/brew:latest"
-  system("docker", "run", "-it", "--rm", "-v", "#{dir}:#{dir}:ro", "-e", "HOMEBREW_DEVELOPER=1", "-e", "HOMEBREW_NO_AUTO_UPDATE=1", image)
+  safe_system("docker", "run", "-it", "--rm", "-v", "#{dir}:#{dir}:ro", "-e", "HOMEBREW_DEVELOPER=1", "-e", "HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_INSTALL_CLEANUP=1", image)
 end
 parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numbers (squashed if needed), if no arguments, then pull those whose PRs are labeled 'good' and 'bottle'") do |pr_numbers|
   # Split argument safely or set to empty array if nil
@@ -148,11 +162,11 @@ parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numb
   print "==> Proceed?"
   readline
   # Ensure we are on master
-  system("git", "checkout", "master", :out => File::NULL)
+  safe_system("git", "checkout", "master", :out => File::NULL)
   # Pull bottles and squash if necessary
   pr_numbers_and_titles.each do |pr_number, _|
-    system("brew", "pull", "--bottle", "--bintray-org=linuxbrew", "--test-bot-user=LinuxbrewTestBot", pr_number.to_s)
-    system("brew", "squash-bottle-pr")
+    safe_system("brew", "pull", "--bottle", "--bintray-org=linuxbrew", "--test-bot-user=LinuxbrewTestBot", pr_number.to_s)
+    safe_system("brew", "squash-bottle-pr")
   end
 end
 parser.parse!
