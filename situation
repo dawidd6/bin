@@ -32,7 +32,7 @@ class Git
   end
 
   def dirty?
-    dirty = `git #{@args} status -s`
+    dirty = `git #{@args} status -s`.chomp
     if dirty.empty?
       false
     else
@@ -41,27 +41,27 @@ class Git
   end
 
   def status
-    status = `git #{@args} status -s`
-    status
+    `git #{@args} status -s`.chomp
   end
 
   def ahead
-    ahead = `git #{@args} log --oneline origin/master..master`
-    ahead
+    `git #{@args} rev-list --count @{u}..`.chomp
+  end
+
+  def behind
+    `git #{@args} fetch origin`
+    `git #{@args} rev-list --count ..@{u}`.chomp
   end
 end
 
-repos = [
+[
   Git.new('ansible', File.join(Dir.home, 'ansible')),
   Git.new('scripts', File.join(Dir.home, 'bin')),
   Git.new('dotfiles', Dir.home, File.join(Dir.home, '.dotfiles')),
   Git.new('keys', Dir.home, File.join(Dir.home, '.keys')),
-]
-repos.each do |repo|
-  # next unless repo.dirty?
-
-  puts <<~ENDOFSTR
-    #{'==>'.blue.bold} #{repo.name.bold} #{repo.path.underline}
-    #{repo.status}
-  ENDOFSTR
+].each do |repo|
+  puts "#{'==>'.blue.bold} #{repo.name.bold} #{repo.path.underline}"
+  puts "#{' ==>'.yellow.bold} ahead #{repo.ahead.bold} commits" unless repo.ahead.to_i.zero?
+  puts "#{' ==>'.red.bold} behind #{repo.behind.bold} commits" unless repo.behind.to_i.zero?
+  puts "#{repo.status}" if repo.dirty?
 end
