@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 url="https://salsa.debian.org/lintian/lintian/raw/master/data/standards-version/release-dates"
 standards="$(curl --silent "$url" | grep -m 1 -E '^[^#].*$' | cut -d' ' -f1)"
 
