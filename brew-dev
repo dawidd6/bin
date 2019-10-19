@@ -85,6 +85,7 @@ parser.on("--sync", "pull origin master and push to #{user} master") do
 end
 parser.on("--fetch", "fetch latest master of homebrew-core") do
   safe_system("git", "fetch", "homebrew")
+  safe_system("git", "fetch", user)
 end
 parser.on("--compare", "compare fetched upstream homebrew-core master with linuxbrew-core master") do
   safe_system("git", "log", "--oneline", "master..homebrew/master")
