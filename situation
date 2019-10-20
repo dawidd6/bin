@@ -1,23 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# TODO check if git is ahead of remote or behind
-
 require 'optparse'
 require 'colorize' # https://github.com/fazibear/colorize
-
-# Class Parser
-class Parser
-  attr_reader :dummy
-
-  def initialize
-    parser = OptionParser.new
-    parser.on('-d', '--dummy', 'halp') do
-      @dummy = true
-    end
-    parser.parse!
-  end
-end
 
 # Class Git
 class Git
@@ -44,6 +29,11 @@ class Git
     `git #{@args} status -s`.chomp
   end
 
+  def sync
+    `git #{@args} pull --rebase`
+    `git #{@args} push`
+  end
+
   def ahead
     `git #{@args} rev-list --count @{u}..`.chomp
   end
@@ -54,14 +44,26 @@ class Git
   end
 end
 
+sync = false
+parser = OptionParser.new
+parser.on('-s', '--sync', 'pull --rebase and push in all repos') do
+  sync = true
+end
+parser.parse!
+
 [
   Git.new('ansible', File.join(Dir.home, 'ansible')),
   Git.new('scripts', File.join(Dir.home, 'bin')),
   Git.new('dotfiles', Dir.home, File.join(Dir.home, '.dotfiles')),
   Git.new('keys', Dir.home, File.join(Dir.home, '.keys')),
 ].each do |repo|
+  dirty = repo.dirty?
   puts "#{'==>'.blue.bold} #{repo.name.bold} #{repo.path.underline}"
   puts "#{' ==>'.yellow.bold} ahead #{repo.ahead.bold} commits" unless repo.ahead.to_i.zero?
   puts "#{' ==>'.red.bold} behind #{repo.behind.bold} commits" unless repo.behind.to_i.zero?
-  puts "#{repo.status}" if repo.dirty?
+  if dirty
+    puts "#{repo.status}"
+  elsif sync
+    repo.sync
+  end
 end
