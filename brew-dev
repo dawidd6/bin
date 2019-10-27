@@ -165,6 +165,7 @@ parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numb
   # Ensure we are on master
   safe_system("git", "checkout", "master", :out => File::NULL)
   # Pull bottles and squash if necessary
+  ENV["HOMEBREW_BOTTLE_DOMAIN"] = "https://linuxbrew.bintray.com"
   pr_numbers_and_titles.each do |pr_number, _|
     safe_system("brew", "pull", "--bottle", "--bintray-org=linuxbrew", "--test-bot-user=LinuxbrewTestBot", pr_number.to_s)
     safe_system("brew", "squash-bottle-pr")
