@@ -23,7 +23,7 @@ parser.on("--rebase FORMULA", "checkout to 'bottle-' branch and rebase") do |for
 end
 parser.on("--fix FORMULA", "checkout to 'bottle-' branch, delete top comment and edit formula") do |formula|
   safe_system("git", "checkout", "bottle-#{formula}")
-  safe_system("sed", "-i", "/# .*: Build a bottle for .*brew/d", "Formula/#{formula}.rb")
+  safe_system("sed", "-i", "/# .*: Build a bottle for .*/d", "Formula/#{formula}.rb")
   safe_system("brew", "edit", formula)
 end
 parser.on("--setup", "setup homebrew-core repo for development") do
