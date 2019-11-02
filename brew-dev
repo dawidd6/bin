@@ -75,12 +75,14 @@ parser.on("--setup", "setup homebrew-core repo for development") do
     safe_system("git", "remote", operation, name, url)
   end
 end
-parser.on("--sync", "pull origin master and push to #{user} master") do
+parser.on("--sync", "pull origin master, fetch #{user} and push to #{user} master") do
   # Ensure we are on master
   safe_system("git", "checkout", "master", :out => File::NULL)
-  # Pull origin
+  # fetch user repo
+  safe_system("git", "fetch", user)
+  # Pull origin master
   safe_system("git", "pull", "origin", "master")
-  # Push user
+  # Push master to user
   safe_system("git", "push", user, "master")
 end
 parser.on("--fetch", "fetch latest master of homebrew-core") do
