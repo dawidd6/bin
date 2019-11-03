@@ -139,7 +139,7 @@ parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numb
   pr_numbers_and_titles = {}
   # If no argument given, get PRs which are labeled 'bottle' and 'good'
   if pr_numbers.empty?
-    pulls = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/pulls`)
+    pulls = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/pulls?per_page=100`)
     pulls.each do |pull|
       bottle = false
       good = false
