@@ -123,9 +123,11 @@ parser.on("--bottle [FORMULAE]", "if no arguments given, find formulae to bottle
   # Ensure we are on master
   safe_system("git", "checkout", "master", :out => File::NULL)
   # Create PRs
+  exit_status = 0
   formulae.each do |formula|
-    safe_system("brew", "build-bottle-pr", "--force", "--remote=#{user}", formula)
+    exit_status = 1 unless system("brew", "build-bottle-pr", "--force", "--remote=#{user}", formula)
   end
+  exit exit_status if exit_status != 0
 end
 parser.on("--container", "launch bash shell in Docker container with brew in it") do
   dir = `brew --repository homebrew/core`.chomp
