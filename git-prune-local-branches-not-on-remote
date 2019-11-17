@@ -29,9 +29,10 @@ if local_branches_removable.length > 0
   EOS
 
   print "==> Remove? [y/N] "
-  input = readline
+  input = STDIN.readline
   if input.chomp == "y"
     local_branches_removable.each do |branch|
+      system("git", "update-ref", "-d", "refs/remotes/#{remote}/#{branch}")
       system("git", "branch", "-D", branch)
     end
   end
