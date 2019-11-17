@@ -32,6 +32,7 @@ parser.on("--setup", "setup homebrew-core repo for development") do
     "#{user}"  =>  "git@github.com:#{user}/linuxbrew-core.git",
     "origin"   => "git@github.com:Homebrew/linuxbrew-core.git",
     "homebrew" => "https://github.com/Homebrew/homebrew-core.git",
+    "homebrew-#{user}"  =>  "git@github.com:#{user}/homebrew-core.git",
   }
   taps = %w[
     homebrew/linux-dev
