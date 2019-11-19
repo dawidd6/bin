@@ -133,7 +133,7 @@ end
 parser.on("--container", "launch bash shell in Docker container with brew in it") do
   dir = `brew --repository homebrew/core`.chomp
   image = "homebrew/brew:latest"
-  safe_system("docker", "run", "-it", "--rm", "-v", "#{dir}:#{dir}:ro", "-e", "HOMEBREW_DEVELOPER=1", "-e", "HOMEBREW_NO_AUTO_UPDATE=1", "-e", "HOMEBREW_NO_INSTALL_CLEANUP=1", image)
+  safe_system("docker", "run", "-it", "--rm", "--user=linuxbrew", "-v", "#{dir}:#{dir}:ro", "-e", "HOMEBREW_DEVELOPER=1", "-e", "HOMEBREW_NO_AUTO_UPDATE=1", "-e", "HOMEBREW_NO_INSTALL_CLEANUP=1", image)
 end
 parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numbers (squashed if needed), if no arguments, then pull those whose PRs are labeled 'good' and 'bottle'") do |pr_numbers|
   # Split argument safely or set to empty array if nil
