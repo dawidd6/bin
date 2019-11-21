@@ -142,6 +142,7 @@ parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numb
   pr_numbers_and_titles = {}
   # If no argument given, get PRs which are labeled 'bottle' and 'good'
   if pr_numbers.empty?
+    limit = 5
     pulls = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/pulls?per_page=100`)
     pulls.each do |pull|
       bottle = false
@@ -150,7 +151,11 @@ parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numb
         bottle = true if label["name"] == "bottle"
         good = true if label["name"] == "good"
       end
-      pr_numbers_and_titles[pull["number"]] = pull["title"] if bottle && good
+      sha = pull["head"]["sha"]
+      status = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/commits/#{sha}/status`)
+      ok = status["statuses"].length == 2 && status["state"] == "success"
+      pr_numbers_and_titles[pull["number"]] = pull["title"] if bottle && (good || ok)
+      break if pr_numbers_and_titles.length >= limit
     end
   else
     pr_numbers.each do |pr_number|
