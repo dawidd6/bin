@@ -151,10 +151,13 @@ parser.on("--pull [PR_NUMBERS]", "pull bottles for given comma separated PR numb
         bottle = true if label["name"] == "bottle"
         good = true if label["name"] == "good"
       end
-      sha = pull["head"]["sha"]
-      status = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/commits/#{sha}/status`)
-      ok = status["statuses"].length == 2 && status["state"] == "success"
-      pr_numbers_and_titles[pull["number"]] = pull["title"] if bottle && (good || ok)
+      next unless bottle
+      unless good
+        sha = pull["head"]["sha"]
+        status = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/commits/#{sha}/status`)
+        ok = status["statuses"].length == 2 && status["state"] == "success"
+      end
+      pr_numbers_and_titles[pull["number"]] = pull["title"] if good || ok
       break if pr_numbers_and_titles.length >= limit
     end
   else
