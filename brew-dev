@@ -7,8 +7,9 @@ require "json"
 # Print help if no arguments given
 ARGV << "-h" if ARGV.empty?
 
-# Get user
+# Get user and editor
 user = ENV["HOMEBREW_GITHUB_USER"] || ENV["USER"]
+editor = ENV["HOMEBREW_EDITOR"] || ENV["EDITOR"]
 
 # Define safe system method, will exit with code 1 if command wasn't successful
 def safe_system(*cmd)
@@ -24,7 +25,8 @@ end
 parser.on("--fix FORMULA", "checkout to 'bottle-' branch, delete top comment and edit formula") do |formula|
   safe_system("git", "checkout", "bottle-#{formula}")
   safe_system("sed", "-i", "/# .*: Build a bottle for .*/d", "Formula/#{formula}.rb")
-  safe_system("brew", "edit", formula)
+  safe_system(editor, "Formula/#{formula}.rb")
+  safe_system("git", "add", "Formula/#{formula}.rb")
 end
 parser.on("--setup", "setup homebrew-core repo for development") do
   dir = `brew --repository homebrew/core`
@@ -76,10 +78,10 @@ parser.on("--setup", "setup homebrew-core repo for development") do
     safe_system("git", "remote", operation, name, url)
   end
 end
-parser.on("--sync", "pull origin master, fetch #{user} and push to #{user} master") do
+parser.on("--sync", "pull origin master, fetch all remotes and push to #{user} master") do
   # Ensure we are on master
   safe_system("git", "checkout", "master", :out => File::NULL)
-  # fetch all remotes
+  # Fetch all remotes
   safe_system("git", "fetch", "--all")
   # Pull origin master
   safe_system("git", "pull", "origin", "master")
