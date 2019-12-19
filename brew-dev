@@ -137,6 +137,7 @@ parser.on('--container', 'launch bash shell in Docker container with brew in it'
     -it
     --rm
     --user=linuxbrew
+    --name=linuxbrew
     --volume=#{dir}:#{dir}:ro
     --volume=#{Dir.home}/.cache/Homebrew:/home/linuxbrew/.cache/Homebrew
     --env=HOMEBREW_DEVELOPER=1
