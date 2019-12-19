@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 url="$1"
 parts=($(echo "$1" | tr '/', ' '))
@@ -21,12 +21,6 @@ cd "$package"
 dh-make-golang create-salsa-project "$package" || true
 
 git remote set-url origin "git@salsa.debian.org:go-team/packages/$package"
-git branch -D pristine-tar
-git branch -m debian/sid
-old_tag="$(git tag -l)"
-new_tag="upstream/$old_tag"
-#git tag "$new_tag" "$old_tag"
-#git tag -d "$old_tag"
 
 cat > debian/gbp.conf <<EOF
 [DEFAULT]
