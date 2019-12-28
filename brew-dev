@@ -168,7 +168,7 @@ parser.on('--pull [PR_NUMBERS]', "pull bottles for given comma separated PR numb
       unless good
         sha = pull['head']['sha']
         status = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/commits/#{sha}/status`)
-        ok = status['statuses'].length == 2 && status['state'] == 'success'
+        ok = status['total_count'] > 0 && status['state'] == 'success'
       end
       pr_numbers_and_titles[pull['number']] = pull['title'] if good || ok
       break if pr_numbers_and_titles.length >= limit
