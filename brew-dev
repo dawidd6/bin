@@ -159,11 +159,13 @@ parser.on('--pull [PR_NUMBERS]', "pull bottles for given comma separated PR numb
     pulls.each do |pull|
       bottle = false
       ready_to_merge = false
+      do_not_merge = false
       pull['labels'].each do |label|
         bottle = true if label['name'] == 'bottle'
         ready_to_merge = true if label['name'] == 'ready to merge'
+        do_not_merge = true if label['name'] == 'do not merge'
       end
-      next unless bottle
+      next if do_not_merge || !bottle
 
       unless ready_to_merge
         sha = pull['head']['sha']
