@@ -147,30 +147,30 @@ parser.on('--container', 'launch bash shell in Docker container with brew in it'
   ]
   safe_system(*cmd)
 end
-parser.on('--pull [PR_NUMBERS]', "pull bottles for given comma separated PR numbers (squashed if needed), if no arguments, then pull those whose PRs are labeled 'good' and 'bottle'") do |pr_numbers|
+parser.on('--pull [PR_NUMBERS]', "pull bottles for given comma separated PR numbers (squashed if needed), if no arguments, then pull those whose PRs are labeled 'ready to merge' and 'bottle'") do |pr_numbers|
   # Split argument safely or set to empty array if nil
   pr_numbers = pr_numbers&.split(',') || []
   # Define hash
   pr_numbers_and_titles = {}
-  # If no argument given, get PRs which are labeled 'bottle' and 'good'
+  # If no argument given, get PRs which are labeled 'bottle' and 'ready to merge'
   if pr_numbers.empty?
     limit = 5
     pulls = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/pulls?per_page=100`)
     pulls.each do |pull|
       bottle = false
-      good = false
+      ready_to_merge = false
       pull['labels'].each do |label|
         bottle = true if label['name'] == 'bottle'
-        good = true if label['name'] == 'good'
+        ready_to_merge = true if label['name'] == 'ready to merge'
       end
       next unless bottle
 
-      unless good
+      unless ready_to_merge
         sha = pull['head']['sha']
         status = JSON.parse(`hub api /repos/homebrew/linuxbrew-core/commits/#{sha}/status`)
         ok = status['total_count'] > 0 && status['state'] == 'success'
       end
-      pr_numbers_and_titles[pull['number']] = pull['title'] if good || ok
+      pr_numbers_and_titles[pull['number']] = pull['title'] if ready_to_merge || ok
       break if pr_numbers_and_titles.length >= limit
     end
   else
