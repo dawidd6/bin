@@ -82,9 +82,7 @@ parser.on('--sync', "pull origin master, fetch all remotes and push to #{user} m
   # Fetch all remotes
   safe_system('git', 'fetch', '--all')
   # Pull origin master
-  safe_system('git', 'pull', 'origin', 'master')
-  # Push master to user
-  safe_system('git', 'push', user, 'master')
+  safe_system('git', 'merge', 'origin/master')
 end
 parser.on('--compare', 'compare fetched upstream homebrew-core master with linuxbrew-core master') do
   safe_system('git', 'log', '--oneline', 'master..homebrew/master')
