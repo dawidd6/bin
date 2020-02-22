@@ -17,6 +17,7 @@ end
 parser = OptionParser.new
 parser.on("--fix FORMULA", "checkout, edit and commit fixed formula") do |formula|
   branch = system("git", "show-ref", "--verify", "--quiet", "refs/heads/#{formula}")
+  safe_system("git", "checkout", "master")
   if branch
     safe_system("git", "checkout", formula)
   else
@@ -30,10 +31,12 @@ parser.on("--fix FORMULA", "checkout, edit and commit fixed formula") do |formul
     safe_system("git", "add", "Formula/#{formula}.rb")
     if branch
       safe_system("git", "commit", "-S", "--amend")
+      safe_system("git", "push", "-f", user, formula)
     else
-      safe_system("git", "commit", "-S", "-m", "#{formula}: fix")
+      safe_system("git", "commit", "--edit", "-S", "-m", "#{formula}: fix")
+      safe_system("git", "push", "-u", user, formula)
+      safe_system("hub", "pull-request", "-a", user)
     end
-    safe_system("git", "show")
   end
 end
 parser.on("--setup", "setup homebrew-core repo for development") do
