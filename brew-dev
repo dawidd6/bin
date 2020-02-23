@@ -44,7 +44,7 @@ parser.on("--setup", "setup homebrew-core repo for development") do
   remotes = {
     user.to_s => "git@github.com:#{user}/linuxbrew-core.git",
     "origin" => "git@github.com:Homebrew/linuxbrew-core.git",
-    "homebrew" => "https://github.com/Homebrew/homebrew-core.git",
+    "homebrew" => "git@github.com:Homebrew/homebrew-core.git",
     "homebrew-#{user}" => "git@github.com:#{user}/homebrew-core.git"
   }
   taps = %w[
@@ -85,8 +85,10 @@ parser.on("--setup", "setup homebrew-core repo for development") do
   end
 end
 parser.on("--sync", "fetch all remotes, prune branches and pull origin/master") do
-  safe_system("git", "checkout", "master")
   safe_system("git", "fetch", "--all", "--prune")
+  safe_system("git", "checkout", "homebrew-master")
+  safe_system("git", "merge", "homebrew/master")
+  safe_system("git", "checkout", "master")
   safe_system("git", "merge", "origin/master")
 end
 parser.on("--compare", "compare fetched upstream homebrew/master with origin/master") do
