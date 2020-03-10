@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+
+require "json"
+
+formula = ARGV[0]
+new_version = ARGV[1]
+
+if !formula || !new_version
+  puts <<~EOS
+    Usage: #{$PROGRAM_NAME} FORMULA VERSION
+  EOS
+  exit 1
+end
+
+info = JSON.parse(`brew info --json #{formula}`)
+old_version = info.first["versions"]["stable"]
+stable = info.first["urls"]["stable"]
+url = stable["url"]
+tag = stable["tag"]
+revision = stable["revision"]
+
+puts <<~EOS
+  OLD:
+    version: #{old_version}
+    url: #{url}
+    tag: #{tag}
+    revision: #{revision}
+EOS
+
+if tag && revision
+  tag.gsub!(old_version, new_version)
+  revision = `git ls-remote --tags #{url} #{tag}`.split("\t").first
+elsif !tag && !revision
+  url.gsub!(old_version, new_version)
+else
+  puts "Error"
+  exit 1
+end
+
+puts <<~EOS
+  NEW:
+    version: #{new_version}
+    url: #{url}
+    tag: #{tag}
+    revision: #{revision}
+EOS
+
+print "==> Continue?"
+STDIN.readline
+
+exit 1 unless system(
+  "brew",
+  "bump-formula-pr",
+  *("--url=#{url}"if !tag && !revision),
+  *("--tag=#{tag}" if tag && revision),
+  *("--revision=#{revision}" if tag && revision),
+  formula
+)
