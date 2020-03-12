@@ -90,6 +90,7 @@ parser.on("--sync", "fetch all remotes, prune branches and pull origin/master") 
   safe_system("git", "merge", "homebrew/master")
   safe_system("git", "checkout", "master")
   safe_system("git", "merge", "origin/master")
+  safe_system("git", "prune-gone-branches")
 end
 parser.on("--compare", "compare fetched upstream homebrew/master with origin/master") do
   safe_system("git", "log", "--oneline", "origin/master..homebrew/master")
