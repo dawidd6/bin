@@ -98,9 +98,9 @@ end
 parser.on("--merge [SHA]", "merge upstream homebrew-core to linuxbrew-core") do |sha|
   safe_system("git", "checkout", "master")
   if sha.nil?
-    safe_system("brew", "merge-homebrew", "--core", "--skip-style")
+    safe_system("brew", "merge-homebrew", "--core")
   else
-    safe_system("brew", "merge-homebrew", "--core", "--skip-style", sha)
+    safe_system("brew", "merge-homebrew", "--core", sha)
   end
 end
 parser.on("--bottle [FORMULAE]", "request bottles (comma separated)") do |formulae|
