@@ -120,7 +120,9 @@ parser.on("--bottle [FORMULAE]", "request bottles (comma separated)") do |formul
   end
 end
 parser.on("--container", "launch bash shell in Docker container with brew in it") do
-  dir = `brew --repository homebrew/core`.chomp
+  core_dir = `brew --repository homebrew/core`.chomp
+  brew_dir = `brew --repository`.chomp + "/Library/Homebrew"
+  cache_dir = `brew --cache`.chomp
   image = "homebrew/brew"
   cmd = %W[
     docker
@@ -128,8 +130,9 @@ parser.on("--container", "launch bash shell in Docker container with brew in it"
     -it
     --rm
     --name=linuxbrew
-    --volume=#{dir}:#{dir}:ro
-    --volume=#{Dir.home}/.cache/Homebrew:/home/linuxbrew/.cache/Homebrew
+    --volume=#{core_dir}:#{core_dir}:ro
+    --volume=#{brew_dir}:#{brew_dir}:ro
+    --volume=#{cache_dir}:#{cache_dir}
     --env=HOMEBREW_DEVELOPER=1
     --env=HOMEBREW_NO_AUTO_UPDATE=1
     --env=HOMEBREW_NO_INSTALL_CLEANUP=1
