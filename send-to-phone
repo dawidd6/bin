@@ -2,4 +2,4 @@
 
 set -euo pipefail
 
-scp -r -P 1234 "$1" "Covenant:"
+scp -r -P 1234 "$1" "$2:"
