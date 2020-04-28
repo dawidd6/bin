@@ -43,7 +43,6 @@ parser.on("--setup", "setup homebrew-core repo for development") do
   dir = `brew --repository homebrew/core`
   remotes = {
     user.to_s => "git@github.com:#{user}/linuxbrew-core.git",
-    "origin" => "git@github.com:Homebrew/linuxbrew-core.git",
     "homebrew" => "git@github.com:Homebrew/homebrew-core.git",
     "homebrew-#{user}" => "git@github.com:#{user}/homebrew-core.git"
   }
@@ -93,7 +92,7 @@ parser.on("--sync", "fetch all remotes, prune branches and pull origin/master") 
   safe_system("git", "prune-gone-branches")
 end
 parser.on("--compare", "compare fetched upstream homebrew/master with origin/master") do
-  safe_system("git", "log", "--oneline", "origin/master..homebrew/master")
+  safe_system("git", "log", "--oneline", "master..homebrew/master")
 end
 parser.on("--merge [SHA]", "merge upstream homebrew-core to linuxbrew-core") do |sha|
   safe_system("git", "checkout", "master")
