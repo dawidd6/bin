@@ -1,58 +1,61 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env -S brew ruby
 
-require "json"
+module Homebrew
+  module_function
 
-formula = ARGV[0]
-new_version = ARGV[1]
+  # Formula name needs to be passed as first argument
+  formula = ARGV.first
 
-if !formula || !new_version
+  # Get livecheck info
+  json = Utils.popen_read HOMEBREW_BREW_FILE, 'livecheck',
+                          '--quiet',
+                          '--newer-only',
+                          '--full-name',
+                          '--json',
+                          formula
+
+  # Parse livecheck output
+  json = JSON.parse json
+
+  # Exit if empty output
+  exit if json.empty?
+
+  # Get info about formula
+  info = json.first
+  formula = info['formula']
+  stable = Formula[formula].stable
+  is_git = stable.downloader.is_a? GitDownloadStrategy
+
+  # Prepare tag and revision or url
+  if is_git
+    dir = "/tmp/#{formula}"
+    tag = stable.specs[:tag].gsub stable.version, info['version']['latest']
+    safe_system 'git', 'clone', '--depth', '1', '--branch', tag, stable.url, dir
+    revision = Utils.popen_read('git', '-C', dir, 'rev-parse', 'HEAD').chomp
+  else
+    url = stable.url.gsub stable.version, info['version']['latest']
+  end
+
   puts <<~EOS
-    Usage: #{$PROGRAM_NAME} FORMULA VERSION
+    OLD:
+      url: #{stable.url}
+      tag: #{stable.specs[:tag]}
+      revision: #{stable.specs[:revision]}
+    NEW:
+      url: #{url}
+      tag: #{tag}
+      revision: #{revision}
   EOS
-  exit 1
+
+  print "==> Continue?"
+  STDIN.readline
+
+  # Finally bump the formula
+  safe_system HOMEBREW_BREW_FILE, 'bump-formula-pr',
+       '--no-audit',
+       '--no-browse',
+       *("--url=#{url}" unless is_git),
+       *("--tag=#{tag}" if is_git),
+       *("--revision=#{revision}" if is_git),
+       formula
 end
-
-info = JSON.parse(`brew info --json #{formula}`)
-old_version = info.first["versions"]["stable"]
-stable = info.first["urls"]["stable"]
-url = stable["url"]
-tag = stable["tag"]
-revision = stable["revision"]
-
-puts <<~EOS
-  OLD:
-    version: #{old_version}
-    url: #{url}
-    tag: #{tag}
-    revision: #{revision}
-EOS
-
-if tag && revision
-  tag.gsub!(old_version, new_version)
-  revision = `git ls-remote --tags #{url} #{tag}`.split("\t").first
-elsif !tag && !revision
-  url.gsub!(old_version, new_version)
-else
-  puts "Error"
-  exit 1
-end
-
-puts <<~EOS
-  NEW:
-    version: #{new_version}
-    url: #{url}
-    tag: #{tag}
-    revision: #{revision}
-EOS
-
-print "==> Continue?"
-STDIN.readline
-
-exit 1 unless system(
-  "brew",
-  "bump-formula-pr",
-  *("--url=#{url}"if !tag && !revision),
-  *("--tag=#{tag}" if tag && revision),
-  *("--revision=#{revision}" if tag && revision),
-  formula
-)
