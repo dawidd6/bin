@@ -128,10 +128,11 @@ parser.on("--container", "launch bash shell in Docker container with brew in it"
     run
     -it
     --rm
+    --user=linuxbrew
     --name=linuxbrew
     --volume=#{core_dir}:#{core_dir}:ro
     --volume=#{brew_dir}:#{brew_dir}:ro
-    --volume=#{cache_dir}:#{cache_dir}
+    --volume=#{cache_dir}:/home/linuxbrew/.cache/Homebrew
     --env=HOMEBREW_DEVELOPER=1
     --env=HOMEBREW_NO_AUTO_UPDATE=1
     --env=HOMEBREW_NO_INSTALL_CLEANUP=1
