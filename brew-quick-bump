@@ -21,45 +21,12 @@ module Homebrew
   exit if json.empty?
 
   # Get info about formula
-  info = json.first
-  formula = info['formula']
-  stable = Formula[formula].stable
-  is_git = stable.downloader.is_a? GitDownloadStrategy
-
-  # Prepare tag and revision or url
-  if is_git
-    dir = "/tmp/#{formula}"
-    tag = stable.specs[:tag].gsub stable.version, info['version']['latest']
-    safe_system 'git', 'clone', '--depth', '1', '--branch', tag, stable.url, dir unless File.exist?(dir)
-    revision = Utils.popen_read('git', '-C', dir, 'rev-parse', 'HEAD').chomp
-  else
-    url = stable.url.gsub stable.version, info['version']['latest']
-  end
-
-  puts <<~EOS
-    OLD:
-      url: #{stable.url}
-      tag: #{stable.specs[:tag]}
-      revision: #{stable.specs[:revision]}
-    NEW:
-      url: #{url}
-      tag: #{tag}
-      revision: #{revision}
-  EOS
-
-  print "==> Continue?"
-  STDIN.readline
-
-  print "==> Force [yN]?"
-  force = STDIN.readline.chomp
+  version = json.first['version']['latest']
 
   # Finally bump the formula
   safe_system HOMEBREW_BREW_FILE, 'bump-formula-pr',
        '--no-audit',
        '--no-browse',
-       *("--force" if ["y", "Y"].include?(force)),
-       *("--url=#{url}" unless is_git),
-       *("--tag=#{tag}" if is_git),
-       *("--revision=#{revision}" if is_git),
+       "--version=#{version}",
        formula
 end
