@@ -30,7 +30,7 @@ module Homebrew
   if is_git
     dir = "/tmp/#{formula}"
     tag = stable.specs[:tag].gsub stable.version, info['version']['latest']
-    safe_system 'git', 'clone', '--depth', '1', '--branch', tag, stable.url, dir
+    safe_system 'git', 'clone', '--depth', '1', '--branch', tag, stable.url, dir unless File.exist?(dir)
     revision = Utils.popen_read('git', '-C', dir, 'rev-parse', 'HEAD').chomp
   else
     url = stable.url.gsub stable.version, info['version']['latest']
@@ -50,10 +50,14 @@ module Homebrew
   print "==> Continue?"
   STDIN.readline
 
+  print "==> Force [yN]?"
+  force = STDIN.readline.chomp
+
   # Finally bump the formula
   safe_system HOMEBREW_BREW_FILE, 'bump-formula-pr',
        '--no-audit',
        '--no-browse',
+       *("--force" if ["y", "Y"].include?(force)),
        *("--url=#{url}" unless is_git),
        *("--tag=#{tag}" if is_git),
        *("--revision=#{revision}" if is_git),
