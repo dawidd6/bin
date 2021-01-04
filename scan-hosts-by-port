@@ -3,7 +3,11 @@
 # scan-hosts-by-port <port> <network_interface>
 # scan-hosts-by-port 22 eth0
 
-net="$(ifconfig $2 | awk '/inet addr/ {print $2}' | awk -F ':' '{print $2}' | awk -F '.' 'NR==1 {print $1 "." $2 "." $3}')"
+net="$(ip route list | grep ${2:-''} | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+
+echo "subnet: $net.0/24"
+echo "port: $1"
+echo "interface: $2"
 
 for ((i=0; i<256; i++)); do
 	width=$(($(tput cols)-7))
