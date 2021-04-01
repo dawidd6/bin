@@ -1,7 +1,7 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env -S brew ruby
+# vi: ft=ruby
 
-
-dir = `brew --repo homebrew/core`.chomp
+dir = `#{HOMEBREW_BREW_FILE} --repo homebrew/core`.chomp
 
 Dir.chdir(dir) do
   all_linux_only_formulae = `grep -lR 'depends_on :linux' Formula`.split("\n")
@@ -13,9 +13,9 @@ Dir.chdir(dir) do
     end
   end
 
-  puts "==> Migrated formulae:"
+  ohai "Migrated formulae"
   puts migrated_formulae
-  puts "==> Not migrated formulae:"
+  ohai "Not migrated formulae"
   puts all_linux_only_formulae - migrated_formulae
 end
 
